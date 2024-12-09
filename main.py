@@ -9,10 +9,6 @@ from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 
-# chromadbの設定
-from chromadb.config import Settings
-import chromadb
-
 load_dotenv()
 
 st.set_page_config(
@@ -66,14 +62,15 @@ if "messages" not in st.session_state:
         )
         splitted_pages = text_splitter.split_documents(docs)
 
-        client_settings = Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory=".db",
-            anonymized_telemetry=False
-        )
-        client = chromadb.Client(client_settings)
+        # client_settings = Settings(
+        #     chroma_db_impl="duckdb+parquet",
+        #     persist_directory=".db",
+        #     anonymized_telemetry=False
+        # )
+        # client = chromadb.Client(client_settings)
 
-        db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db", client=client)
+        # db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db", client=client)
+        db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db")
     retriever = db.as_retriever(search_kwargs={"k": 5})
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
     st.session_state.chain = RetrievalQA.from_chain_type(
