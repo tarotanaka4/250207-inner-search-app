@@ -7,15 +7,20 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.api_core.client_options import ClientOptions
-    from google.cloud.discoveryengine_v1beta import SearchRequest, SearchResult
+    from google.cloud.discoveryengine_v1beta import (
+        ConversationalSearchServiceClient,
+        SearchRequest,
+        SearchResult,
+        SearchServiceClient,
+    )
 
 
 class _BaseGoogleVertexAISearchRetriever(BaseModel):
@@ -41,9 +46,8 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     3 - Blended search
     """
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
         try:
             from google.cloud import discoveryengine_v1beta  # noqa: F401
@@ -238,14 +242,13 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         Search will be based on the corrected query if found.
     """
 
-    # type is SearchServiceClient but can't be set due to optional imports
-    _client: Any = None
+    _client: SearchServiceClient
     _serving_config: str
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        extra="ignore",
-    )
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "ignore"
+        underscore_attrs_are_private = True
 
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
@@ -404,14 +407,13 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     conversation_id: str = "-"
     """Vertex AI Search Conversation ID."""
 
-    # type is ConversationalSearchServiceClient but can't be set due to optional imports
-    _client: Any = None
+    _client: ConversationalSearchServiceClient
     _serving_config: str
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        extra="ignore",
-    )
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "ignore"
+        underscore_attrs_are_private = True
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

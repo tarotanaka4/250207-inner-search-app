@@ -5,12 +5,12 @@ https://docs.tavily.com/docs/tavily-api/introduction
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import aiohttp
 import requests
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 
 TAVILY_API_URL = "https://api.tavily.com"
 
@@ -20,13 +20,11 @@ class TavilySearchAPIWrapper(BaseModel):
 
     tavily_api_key: SecretStr
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    class Config:
+        extra = "forbid"
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         tavily_api_key = get_from_dict_or_env(
             values, "tavily_api_key", "TAVILY_API_KEY"

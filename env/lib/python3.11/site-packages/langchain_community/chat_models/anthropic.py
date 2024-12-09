@@ -20,7 +20,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.prompt_values import PromptValue
-from pydantic import ConfigDict
 
 from langchain_community.llms.anthropic import _AnthropicCommon
 
@@ -92,10 +91,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-    )
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

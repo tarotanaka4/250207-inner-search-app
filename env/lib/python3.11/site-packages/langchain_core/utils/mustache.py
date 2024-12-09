@@ -6,12 +6,17 @@ MIT License
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterator, Mapping, Sequence
 from types import MappingProxyType
 from typing import (
     Any,
+    Dict,
+    Iterator,
+    List,
     Literal,
+    Mapping,
     Optional,
+    Sequence,
+    Tuple,
     Union,
     cast,
 )
@@ -21,7 +26,7 @@ from typing_extensions import TypeAlias
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = list[Union[Literal[False, 0], Mapping[str, Any]]]
+Scopes: TypeAlias = List[Union[Literal[False, 0], Mapping[str, Any]]]
 
 
 # Globals
@@ -32,13 +37,15 @@ _LAST_TAG_LINE = None
 class ChevronError(SyntaxError):
     """Custom exception for Chevron errors."""
 
+    pass
+
 
 #
 # Helper functions
 #
 
 
-def grab_literal(template: str, l_del: str) -> tuple[str, str]:
+def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
     """Parse a literal from the template.
 
     Args:
@@ -80,9 +87,12 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         padding = literal.split("\n")[-1]
 
         # If all the characters since the last newline are spaces
-        # Then the next tag could be a standalone
-        # Otherwise it can't be
-        return padding.isspace() or padding == ""
+        if padding.isspace() or padding == "":
+            # Then the next tag could be a standalone
+            return True
+        else:
+            # Otherwise it can't be
+            return False
     else:
         return False
 
@@ -104,14 +114,17 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         on_newline = template.split("\n", 1)
 
         # If the stuff to the right of us are spaces we're a standalone
-        return on_newline[0].isspace() or not on_newline[0]
+        if on_newline[0].isspace() or not on_newline[0]:
+            return True
+        else:
+            return False
 
     # If we're a tag can't be a standalone
     else:
         return False
 
 
-def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
+def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], str]:
     """Parse a tag from a template.
 
     Args:
@@ -144,8 +157,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     try:
         tag, template = template.split(r_del, 1)
     except ValueError as e:
-        msg = "unclosed tag " f"at line {_CURRENT_LINE}"
-        raise ChevronError(msg) from e
+        raise ChevronError("unclosed tag " f"at line {_CURRENT_LINE}") from e
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -165,21 +177,18 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
 
         # Otherwise we should complain
         else:
-            msg = "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
-            raise ChevronError(msg)
+            raise ChevronError(
+                "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
+            )
 
-    elif (
-        # If we might be a no html escape tag
-        tag_type == "no escape?"
+    # If we might be a no html escape tag
+    elif tag_type == "no escape?":
         # And we have a third curly brace
         # (And are using curly braces as delimiters)
-        and l_del == "{{"
-        and r_del == "}}"
-        and template.startswith("}")
-    ):
-        # Then we are a no html escape tag
-        template = template[1:]
-        tag_type = "no escape"
+        if l_del == "{{" and r_del == "}}" and template.startswith("}"):
+            # Then we are a no html escape tag
+            template = template[1:]
+            tag_type = "no escape"
 
     # Strip the whitespace off the key and return
     return ((tag_type, tag.strip()), template)
@@ -192,7 +201,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
 
 def tokenize(
     template: str, def_ldel: str = "{{", def_rdel: str = "}}"
-) -> Iterator[tuple[str, str]]:
+) -> Iterator[Tuple[str, str]]:
     """Tokenize a mustache template.
 
     Tokenizes a mustache template in a generator fashion,
@@ -275,20 +284,18 @@ def tokenize(
             try:
                 last_section = open_sections.pop()
             except IndexError as e:
-                msg = (
+                raise ChevronError(
                     f'Trying to close tag "{tag_key}"\n'
                     "Looks like it was not opened.\n"
                     f"line {_CURRENT_LINE + 1}"
-                )
-                raise ChevronError(msg) from e
+                ) from e
             if tag_key != last_section:
                 # Otherwise we need to complain
-                msg = (
+                raise ChevronError(
                     f'Trying to close tag "{tag_key}"\n'
                     f'last open tag is "{last_section}"\n'
                     f"line {_CURRENT_LINE + 1}"
                 )
-                raise ChevronError(msg)
 
         # Do the second check to see if we're a standalone
         is_standalone = r_sa_check(template, tag_type, is_standalone)
@@ -315,12 +322,11 @@ def tokenize(
     # If there are any open sections when we're done
     if open_sections:
         # Then we need to complain
-        msg = (
+        raise ChevronError(
             "Unexpected EOF\n"
             f'the tag "{open_sections[-1]}" was never closed\n'
             f"was opened at line {_LAST_TAG_LINE}"
         )
-        raise ChevronError(msg)
 
 
 #
@@ -376,7 +382,7 @@ def _get_key(
                 # Move into the scope
                 try:
                     # Try subscripting (Normal dictionaries)
-                    scope = cast(dict[str, Any], scope)[child]
+                    scope = cast(Dict[str, Any], scope)[child]
                 except (TypeError, AttributeError):
                     try:
                         scope = getattr(scope, child)
@@ -421,13 +427,13 @@ def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
 #
 # The main rendering function
 #
-g_token_cache: dict[str, list[tuple[str, str]]] = {}
+g_token_cache: Dict[str, List[Tuple[str, str]]] = {}
 
 EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
 
 
 def render(
-    template: Union[str, list[tuple[str, str]]] = "",
+    template: Union[str, List[Tuple[str, str]]] = "",
     data: Mapping[str, Any] = EMPTY_DICT,
     partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
@@ -484,7 +490,7 @@ def render(
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it
         # But it does need to be a generator
-        tokens: Iterator[tuple[str, str]] = (token for token in template)
+        tokens: Iterator[Tuple[str, str]] = (token for token in template)
     else:
         if template in g_token_cache:
             tokens = (token for token in g_token_cache[template])
@@ -555,7 +561,7 @@ def render(
             if callable(scope):
                 # Generate template text from tags
                 text = ""
-                tags: list[tuple[str, str]] = []
+                tags: List[Tuple[str, str]] = []
                 for token in tokens:
                     if token == ("end", key):
                         break

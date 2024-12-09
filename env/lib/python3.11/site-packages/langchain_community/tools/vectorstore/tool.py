@@ -8,9 +8,9 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStore
-from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.llms.openai import OpenAI
 
@@ -21,9 +21,8 @@ class BaseVectorStoreTool(BaseModel):
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-    )
+    class Config(BaseTool.Config):
+        pass
 
 
 def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
@@ -31,7 +30,7 @@ def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
     return values
 
 
-class VectorStoreQATool(BaseVectorStoreTool, BaseTool):  # type: ignore[override]
+class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQA chain. To be initialized with name and chain."""
 
     @staticmethod
@@ -79,7 +78,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):  # type: ignore[override
         )[chain.output_key]
 
 
-class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):  # type: ignore[override]
+class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQAWithSources chain."""
 
     @staticmethod

@@ -1,7 +1,6 @@
 """**Chat Sessions** are a collection of messages and function calls."""
 
-from collections.abc import Sequence
-from typing import TypedDict
+from typing import Sequence, TypedDict
 
 from langchain_core.messages import BaseMessage
 

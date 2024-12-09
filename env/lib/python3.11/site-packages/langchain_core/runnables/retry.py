@@ -1,7 +1,11 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
+    List,
     Optional,
+    Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -94,12 +98,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
             retryable_chain = chain.with_retry()
     """
 
-    retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
+    retry_exception_types: Tuple[Type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.
-
+    
     In general you should only retry on exceptions that are likely to be
     transient, such as network errors.
-
+    
     Good exceptions to retry are all server errors (5xx) and selected client
     errors (4xx) such as 429 Too Many Requests.
     """
@@ -111,13 +115,13 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     """The maximum number of attempts to retry the Runnable."""
 
     @classmethod
-    def get_lc_namespace(cls) -> list[str]:
+    def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
     @property
-    def _kwargs_retrying(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = {}
+    def _kwargs_retrying(self) -> Dict[str, Any]:
+        kwargs: Dict[str, Any] = dict()
 
         if self.max_attempt_number:
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
@@ -148,10 +152,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     def _patch_config_list(
         self,
-        config: list[RunnableConfig],
-        run_manager: list["T"],
+        config: List[RunnableConfig],
+        run_manager: List["T"],
         retry_state: RetryCallState,
-    ) -> list[RunnableConfig]:
+    ) -> List[RunnableConfig]:
         return [
             self._patch_config(c, rm, retry_state) for c, rm in zip(config, run_manager)
         ]
@@ -204,17 +208,17 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     def _batch(
         self,
-        inputs: list[Input],
-        run_manager: list["CallbackManagerForChainRun"],
-        config: list[RunnableConfig],
+        inputs: List[Input],
+        run_manager: List["CallbackManagerForChainRun"],
+        config: List[RunnableConfig],
         **kwargs: Any,
-    ) -> list[Union[Output, Exception]]:
-        results_map: dict[int, Output] = {}
+    ) -> List[Union[Output, Exception]]:
+        results_map: Dict[int, Output] = {}
 
-        def pending(iterable: list[U]) -> list[U]:
+        def pending(iterable: List[U]) -> List[U]:
             return [item for idx, item in enumerate(iterable) if idx not in results_map]
 
-        not_set: list[Output] = []
+        not_set: List[Output] = []
         result = not_set
         try:
             for attempt in self._sync_retrying():
@@ -246,9 +250,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast(List[Output], [e] * len(inputs))
 
-        outputs: list[Union[Output, Exception]] = []
+        outputs: List[Union[Output, Exception]] = []
         for idx, _ in enumerate(inputs):
             if idx in results_map:
                 outputs.append(results_map[idx])
@@ -258,29 +262,29 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     def batch(
         self,
-        inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[Output]:
+    ) -> List[Output]:
         return self._batch_with_config(
             self._batch, inputs, config, return_exceptions=return_exceptions, **kwargs
         )
 
     async def _abatch(
         self,
-        inputs: list[Input],
-        run_manager: list["AsyncCallbackManagerForChainRun"],
-        config: list[RunnableConfig],
+        inputs: List[Input],
+        run_manager: List["AsyncCallbackManagerForChainRun"],
+        config: List[RunnableConfig],
         **kwargs: Any,
-    ) -> list[Union[Output, Exception]]:
-        results_map: dict[int, Output] = {}
+    ) -> List[Union[Output, Exception]]:
+        results_map: Dict[int, Output] = {}
 
-        def pending(iterable: list[U]) -> list[U]:
+        def pending(iterable: List[U]) -> List[U]:
             return [item for idx, item in enumerate(iterable) if idx not in results_map]
 
-        not_set: list[Output] = []
+        not_set: List[Output] = []
         result = not_set
         try:
             async for attempt in self._async_retrying():
@@ -312,9 +316,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast(List[Output], [e] * len(inputs))
 
-        outputs: list[Union[Output, Exception]] = []
+        outputs: List[Union[Output, Exception]] = []
         for idx, _ in enumerate(inputs):
             if idx in results_map:
                 outputs.append(results_map[idx])
@@ -324,12 +328,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     async def abatch(
         self,
-        inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[Output]:
+    ) -> List[Output]:
         return await self._abatch_with_config(
             self._abatch, inputs, config, return_exceptions=return_exceptions, **kwargs
         )

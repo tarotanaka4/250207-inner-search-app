@@ -1,7 +1,6 @@
 import logging
 import re
-from collections.abc import Sequence
-from typing import Optional, Union
+from typing import List, Optional, Sequence, Union
 from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ DEFAULT_LINK_REGEX = (
 
 def find_all_links(
     raw_html: str, *, pattern: Union[str, re.Pattern, None] = None
-) -> list[str]:
+) -> List[str]:
     """Extract all links from a raw HTML string.
 
     Args:
@@ -57,7 +56,7 @@ def extract_sub_links(
     prevent_outside: bool = True,
     exclude_prefixes: Sequence[str] = (),
     continue_on_failure: bool = False,
-) -> list[str]:
+) -> List[str]:
     """Extract all links from a raw HTML string and convert into absolute paths.
 
     Args:

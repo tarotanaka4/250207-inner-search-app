@@ -8,7 +8,6 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
-from pydantic import ConfigDict
 
 
 def hash_text(text: str) -> str:
@@ -104,9 +103,9 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     embeddings: Embeddings
     """Embeddings model to use."""
     """description"""
-    sparse_encoder: Any = None
+    sparse_encoder: Any
     """Sparse encoder to use."""
-    index: Any = None
+    index: Any
     """Pinecone index to use."""
     top_k: int = 4
     """Number of documents to return."""
@@ -115,10 +114,9 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     namespace: Optional[str] = None
     """Namespace value for index partition."""
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        extra="forbid",
-    )
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     def add_texts(
         self,

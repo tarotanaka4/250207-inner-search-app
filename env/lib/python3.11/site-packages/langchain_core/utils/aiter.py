@@ -5,20 +5,23 @@ MIT License
 """
 
 from collections import deque
-from collections.abc import (
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Iterator,
-)
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import (
     Any,
+    AsyncContextManager,
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
     Callable,
+    Deque,
     Generic,
+    Iterator,
+    List,
     Optional,
+    Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -60,8 +63,7 @@ def py_anext(
             Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
         )
     except AttributeError as e:
-        msg = f"{iterator!r} is not an async iterator"
-        raise TypeError(msg) from e
+        raise TypeError(f"{iterator!r} is not an async iterator") from e
 
     if default is _no_default:
         return __anext__(iterator)
@@ -93,10 +95,10 @@ class NoLock:
 async def tee_peer(
     iterator: AsyncIterator[T],
     # the buffer specific to this peer
-    buffer: deque[T],
+    buffer: Deque[T],
     # the buffers of all peers, including our own
-    peers: list[deque[T]],
-    lock: AbstractAsyncContextManager[Any],
+    peers: List[Deque[T]],
+    lock: AsyncContextManager[Any],
 ) -> AsyncGenerator[T, None]:
     """An individual iterator of a :py:func:`~.tee`.
 
@@ -189,10 +191,10 @@ class Tee(Generic[T]):
         iterable: AsyncIterator[T],
         n: int = 2,
         *,
-        lock: Optional[AbstractAsyncContextManager[Any]] = None,
+        lock: Optional[AsyncContextManager[Any]] = None,
     ):
         self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
-        self._buffers: list[deque[T]] = [deque() for _ in range(n)]
+        self._buffers: List[Deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
             tee_peer(
                 iterator=self._iterator,
@@ -210,11 +212,11 @@ class Tee(Generic[T]):
     def __getitem__(self, item: int) -> AsyncIterator[T]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> tuple[AsyncIterator[T], ...]: ...
+    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]: ...
 
     def __getitem__(
         self, item: Union[int, slice]
-    ) -> Union[AsyncIterator[T], tuple[AsyncIterator[T], ...]]:
+    ) -> Union[AsyncIterator[T], Tuple[AsyncIterator[T], ...]]:
         return self._children[item]
 
     def __iter__(self) -> Iterator[AsyncIterator[T]]:
@@ -236,7 +238,7 @@ class Tee(Generic[T]):
 atee = Tee
 
 
-class aclosing(AbstractAsyncContextManager):  # noqa: N801
+class aclosing(AbstractAsyncContextManager):
     """Async context manager for safely finalizing an asynchronously cleaned-up
     resource such as an async generator, calling its ``aclose()`` method.
 
@@ -265,7 +267,7 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
+        exc_type: Optional[Type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
@@ -275,7 +277,7 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
 
 async def abatch_iterate(
     size: int, iterable: AsyncIterable[T]
-) -> AsyncIterator[list[T]]:
+) -> AsyncIterator[List[T]]:
     """Utility batching function for async iterables.
 
     Args:
@@ -285,7 +287,7 @@ async def abatch_iterate(
     Returns:
         An async iterator over the batches.
     """
-    batch: list[T] = []
+    batch: List[T] = []
     async for element in iterable:
         if len(batch) < size:
             batch.append(element)

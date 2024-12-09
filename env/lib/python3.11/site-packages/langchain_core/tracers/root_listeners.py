@@ -1,5 +1,4 @@
-from collections.abc import Awaitable
-from typing import Callable, Optional, Union
+from typing import Awaitable, Callable, Optional, Union
 from uuid import UUID
 
 from langchain_core.runnables.config import (

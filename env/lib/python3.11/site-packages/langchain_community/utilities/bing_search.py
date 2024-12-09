@@ -1,10 +1,10 @@
 """Util that calls Bing Search."""
 
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import requests
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # BING_SEARCH_ENDPOINT is the default endpoint for Bing Web Search API.
 # Currently There are two web-based Bing Search services available on Azure,
@@ -34,9 +34,8 @@ class BingSearchAPIWrapper(BaseModel):
     search_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the search request."""
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    class Config:
+        extra = "forbid"
 
     def _bing_search_results(self, search_term: str, count: int) -> List[dict]:
         headers = {"Ocp-Apim-Subscription-Key": self.bing_subscription_key}
@@ -58,9 +57,8 @@ class BingSearchAPIWrapper(BaseModel):
             return search_results["webPages"]["value"]
         return []
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         bing_subscription_key = get_from_dict_or_env(
             values, "bing_subscription_key", "BING_SUBSCRIPTION_KEY"

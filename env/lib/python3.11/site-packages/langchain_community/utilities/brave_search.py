@@ -3,7 +3,7 @@ from typing import List
 
 import requests
 from langchain_core.documents import Document
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class BraveSearchWrapper(BaseModel):

@@ -3,8 +3,7 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Any, Optional, TypedDict
+from typing import Any, Dict, List, Optional, Sequence, TypedDict
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
@@ -145,7 +144,7 @@ class RecordManager(ABC):
         """
 
     @abstractmethod
-    def exists(self, keys: Sequence[str]) -> list[bool]:
+    def exists(self, keys: Sequence[str]) -> List[bool]:
         """Check if the provided keys exist in the database.
 
         Args:
@@ -156,7 +155,7 @@ class RecordManager(ABC):
         """
 
     @abstractmethod
-    async def aexists(self, keys: Sequence[str]) -> list[bool]:
+    async def aexists(self, keys: Sequence[str]) -> List[bool]:
         """Asynchronously check if the provided keys exist in the database.
 
         Args:
@@ -174,7 +173,7 @@ class RecordManager(ABC):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> list[str]:
+    ) -> List[str]:
         """List records in the database based on the provided filters.
 
         Args:
@@ -195,7 +194,7 @@ class RecordManager(ABC):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> list[str]:
+    ) -> List[str]:
         """Asynchronously list records in the database based on the provided filters.
 
         Args:
@@ -242,7 +241,7 @@ class InMemoryRecordManager(RecordManager):
         super().__init__(namespace)
         # Each key points to a dictionary
         # of {'group_id': group_id, 'updated_at': timestamp}
-        self.records: dict[str, _Record] = {}
+        self.records: Dict[str, _Record] = {}
         self.namespace = namespace
 
     def create_schema(self) -> None:
@@ -290,13 +289,11 @@ class InMemoryRecordManager(RecordManager):
         """
 
         if group_ids and len(keys) != len(group_ids):
-            msg = "Length of keys must match length of group_ids"
-            raise ValueError(msg)
+            raise ValueError("Length of keys must match length of group_ids")
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
             if time_at_least and time_at_least > self.get_time():
-                msg = "time_at_least must be in the past"
-                raise ValueError(msg)
+                raise ValueError("time_at_least must be in the past")
             self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
 
     async def aupdate(
@@ -328,7 +325,7 @@ class InMemoryRecordManager(RecordManager):
         """
         self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
 
-    def exists(self, keys: Sequence[str]) -> list[bool]:
+    def exists(self, keys: Sequence[str]) -> List[bool]:
         """Check if the provided keys exist in the database.
 
         Args:
@@ -339,7 +336,7 @@ class InMemoryRecordManager(RecordManager):
         """
         return [key in self.records for key in keys]
 
-    async def aexists(self, keys: Sequence[str]) -> list[bool]:
+    async def aexists(self, keys: Sequence[str]) -> List[bool]:
         """Async check if the provided keys exist in the database.
 
         Args:
@@ -357,7 +354,7 @@ class InMemoryRecordManager(RecordManager):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> list[str]:
+    ) -> List[str]:
         """List records in the database based on the provided filters.
 
         Args:
@@ -393,7 +390,7 @@ class InMemoryRecordManager(RecordManager):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> list[str]:
+    ) -> List[str]:
         """Async list records in the database based on the provided filters.
 
         Args:
@@ -452,9 +449,9 @@ class UpsertResponse(TypedDict):
     indexed to avoid this issue.
     """
 
-    succeeded: list[str]
+    succeeded: List[str]
     """The IDs that were successfully indexed."""
-    failed: list[str]
+    failed: List[str]
     """The IDs that failed to index."""
 
 
@@ -467,26 +464,26 @@ class DeleteResponse(TypedDict, total=False):
 
     num_deleted: int
     """The number of items that were successfully deleted.
-
+    
     If returned, this should only include *actual* deletions.
-
-    If the ID did not exist to begin with,
+    
+    If the ID did not exist to begin with, 
     it should not be included in this count.
     """
 
     succeeded: Sequence[str]
     """The IDs that were successfully deleted.
-
+    
     If returned, this should only include *actual* deletions.
-
+    
     If the ID did not exist to begin with,
     it should not be included in this list.
     """
 
     failed: Sequence[str]
     """The IDs that failed to be deleted.
-
-    Please note that deleting an ID that
+    
+    Please note that deleting an ID that 
     does not exist is **NOT** considered a failure.
     """
 
@@ -565,7 +562,7 @@ class DocumentIndex(BaseRetriever):
         )
 
     @abc.abstractmethod
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs or other criteria.
 
         Calling delete without any input parameters should raise a ValueError!
@@ -582,7 +579,7 @@ class DocumentIndex(BaseRetriever):
         """
 
     async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
+        self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete by IDs or other criteria. Async variant.
 
@@ -610,7 +607,7 @@ class DocumentIndex(BaseRetriever):
         ids: Sequence[str],
         /,
         **kwargs: Any,
-    ) -> list[Document]:
+    ) -> List[Document]:
         """Get documents by id.
 
         Fewer documents may be returned than requested if some IDs are not found or
@@ -636,7 +633,7 @@ class DocumentIndex(BaseRetriever):
         ids: Sequence[str],
         /,
         **kwargs: Any,
-    ) -> list[Document]:
+    ) -> List[Document]:
         """Get documents by id.
 
         Fewer documents may be returned than requested if some IDs are not found or

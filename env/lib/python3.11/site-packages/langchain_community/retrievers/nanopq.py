@@ -8,7 +8,6 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
-from pydantic import ConfigDict
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -31,7 +30,7 @@ class NanoPQRetriever(BaseRetriever):
 
     embeddings: Embeddings
     """Embeddings model to use."""
-    index: Any = None
+    index: Any
     """Index of embeddings."""
     texts: List[str]
     """List of texts to index."""
@@ -46,9 +45,8 @@ class NanoPQRetriever(BaseRetriever):
     clusters: int = 128
     """No of clusters to be created"""
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-    )
+    class Config:
+        arbitrary_types_allowed = True
 
     @classmethod
     def from_texts(

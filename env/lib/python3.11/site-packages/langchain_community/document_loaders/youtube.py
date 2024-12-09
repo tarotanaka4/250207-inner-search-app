@@ -10,8 +10,8 @@ from urllib.parse import parse_qs, urlparse
 from xml.etree.ElementTree import ParseError  # OK: trusted-source
 
 from langchain_core.documents import Document
-from pydantic import model_validator
-from pydantic.dataclasses import dataclass
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1.dataclasses import dataclass
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -50,9 +50,10 @@ class GoogleApiClient:
     def __post_init__(self) -> None:
         self.creds = self._load_credentials()
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
+    @root_validator(pre=True)
+    def validate_channel_or_videoIds_is_set(
+        cls, values: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
 
         if not values.get("credentials_path") and not values.get(
@@ -390,9 +391,10 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
         return build("youtube", "v3", credentials=creds)
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
+    @root_validator(pre=True)
+    def validate_channel_or_videoIds_is_set(
+        cls, values: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
         if not values.get("channel_name") and not values.get("video_ids"):
             raise ValueError("Must specify either channel_name or video_ids")

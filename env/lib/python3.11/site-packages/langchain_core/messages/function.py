@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -26,13 +26,13 @@ class FunctionMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "function"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> list[str]:
+    def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
 
-FunctionMessage.model_rebuild()
+FunctionMessage.update_forward_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
@@ -42,11 +42,11 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization).
+    """The type of the message (used for serialization). 
     Defaults to "FunctionMessageChunk"."""
 
     @classmethod
-    def get_lc_namespace(cls) -> list[str]:
+    def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
@@ -54,8 +54,9 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:
-                msg = "Cannot concatenate FunctionMessageChunks with different names."
-                raise ValueError(msg)
+                raise ValueError(
+                    "Cannot concatenate FunctionMessageChunks with different names."
+                )
 
             return self.__class__(
                 name=self.name,

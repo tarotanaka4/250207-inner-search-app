@@ -1,6 +1,6 @@
 """Handle chained inputs."""
 
-from typing import Optional, TextIO
+from typing import Dict, List, Optional, TextIO
 
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",
@@ -12,8 +12,8 @@ _TEXT_COLOR_MAPPING = {
 
 
 def get_color_mapping(
-    items: list[str], excluded_colors: Optional[list] = None
-) -> dict[str, str]:
+    items: List[str], excluded_colors: Optional[List] = None
+) -> Dict[str, str]:
     """Get mapping for items to a support color.
 
     Args:

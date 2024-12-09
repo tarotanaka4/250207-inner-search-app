@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain_core.callbacks import CallbackManagerForChainRun
-from pydantic import ConfigDict, Field, model_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain_community.utilities.requests import TextRequestsWrapper
 
@@ -38,10 +38,9 @@ class LLMRequestsChain(Chain):
     input_key: str = "url"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        extra="forbid",
-    )
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -59,9 +58,8 @@ class LLMRequestsChain(Chain):
         """
         return [self.output_key]
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401

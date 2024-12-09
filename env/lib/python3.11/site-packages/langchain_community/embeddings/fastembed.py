@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
-from pydantic import BaseModel, ConfigDict
 
 MIN_VERSION = "0.2.0"
 
@@ -38,12 +38,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Unknown behavior for values > 512.
     """
 
-    cache_dir: Optional[str] = None
+    cache_dir: Optional[str]
     """The path to the cache directory.
     Defaults to `local_cache` in the parent directory
     """
 
-    threads: Optional[int] = None
+    threads: Optional[int]
     """The number of threads single onnxruntime session can use.
     Defaults to None
     """
@@ -65,9 +65,10 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to `None`.
     """
 
-    model: Any = None  # : :meta private:
+    _model: Any  # : :meta private:
 
-    model_config = ConfigDict(extra="allow", protected_namespaces=())
+    class Config:
+        extra = "allow"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
@@ -91,7 +92,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
                 'FastEmbedEmbeddings requires `pip install -U "fastembed>=0.2.0"`.'
             )
 
-        values["model"] = fastembed.TextEmbedding(
+        values["_model"] = fastembed.TextEmbedding(
             model_name=model_name,
             max_length=max_length,
             cache_dir=cache_dir,
@@ -110,11 +111,11 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         """
         embeddings: List[np.ndarray]
         if self.doc_embed_type == "passage":
-            embeddings = self.model.passage_embed(
+            embeddings = self._model.passage_embed(
                 texts, batch_size=self.batch_size, parallel=self.parallel
             )
         else:
-            embeddings = self.model.embed(
+            embeddings = self._model.embed(
                 texts, batch_size=self.batch_size, parallel=self.parallel
             )
         return [e.tolist() for e in embeddings]
@@ -129,7 +130,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         query_embeddings: np.ndarray = next(
-            self.model.query_embed(
+            self._model.query_embed(
                 text, batch_size=self.batch_size, parallel=self.parallel
             )
         )

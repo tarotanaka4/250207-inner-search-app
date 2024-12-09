@@ -10,11 +10,11 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -120,19 +120,17 @@ class HuggingFaceEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
     model: str
-    client: Any = None
-    async_client: Any = None
+    client: Any
+    async_client: Any
     task: Optional[str] = None
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    class Config:
+        extra = "forbid"
 
-    @model_validator(mode="before")
-    @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

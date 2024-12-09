@@ -2,6 +2,7 @@ from typing import Callable, List, Set
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
+from langchain_core.graph_vectorstores.links import Link
 
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
@@ -9,7 +10,6 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
 from langchain_community.graph_vectorstores.extractors.link_extractor_adapter import (
     LinkExtractorAdapter,
 )
-from langchain_community.graph_vectorstores.links import Link
 
 # TypeAlias is not available in Python 3.9, we can't use that or the newer `type`.
 HierarchyInput = List[str]

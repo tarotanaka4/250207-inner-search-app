@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List
 
 from langchain_core.documents import Document
-from pydantic import BaseModel, model_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -49,9 +49,8 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             dataset_id=dataset_id, dataset_mapping_function=dataset_mapping_function
         )
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate environment.
 
         Args:

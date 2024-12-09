@@ -6,7 +6,6 @@ from typing import Any, Callable, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import ConfigDict
 
 DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
 
@@ -38,9 +37,9 @@ class MLXPipeline(LLM):
 
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
-    model: Any = None  #: :meta private:
+    model: Any  #: :meta private:
     """Model."""
-    tokenizer: Any = None  #: :meta private:
+    tokenizer: Any  #: :meta private:
     """Tokenizer."""
     tokenizer_config: Optional[dict] = None
     """
@@ -75,9 +74,8 @@ class MLXPipeline(LLM):
 
     """
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    class Config:
+        extra = "forbid"
 
     @classmethod
     def from_model_id(
@@ -232,9 +230,9 @@ class MLXPipeline(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
+                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
-                yield chunk
 
             # break if stop sequence found
             if token == eos_token_id or (stop is not None and text in stop):

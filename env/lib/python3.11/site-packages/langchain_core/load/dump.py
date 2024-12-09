@@ -37,8 +37,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
         ValueError: If `default` is passed as a kwarg.
     """
     if "default" in kwargs:
-        msg = "`default` should not be passed to dumps"
-        raise ValueError(msg)
+        raise ValueError("`default` should not be passed to dumps")
     try:
         if pretty:
             indent = kwargs.pop("indent", 2)

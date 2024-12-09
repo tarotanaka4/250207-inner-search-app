@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import contextlib
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Generic,
+    List,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
 
-from typing_extensions import override
+from typing_extensions import get_args
 
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
@@ -30,7 +32,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -44,7 +46,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         """
 
     async def aparse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self, result: List[Generation], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -66,24 +68,19 @@ class BaseGenerationOutputParser(
     """Base class to parse the output of an LLM call."""
 
     @property
-    @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
-    @override
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
 
     def invoke(
-        self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -156,14 +153,12 @@ class BaseOutputParser(
     """  # noqa: E501
 
     @property
-    @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
-    @override
-    def OutputType(self) -> type[T]:
+    def OutputType(self) -> Type[T]:
         """Return the output type for the parser.
 
         This property is inferred from the first type argument of the class.
@@ -171,23 +166,18 @@ class BaseOutputParser(
         Raises:
             TypeError: If the class doesn't have an inferable OutputType.
         """
-        for base in self.__class__.mro():
-            if hasattr(base, "__pydantic_generic_metadata__"):
-                metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata and len(metadata["args"]) > 0:
-                    return metadata["args"][0]
+        for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
+            type_args = get_args(cls)
+            if type_args and len(type_args) == 1:
+                return type_args[0]
 
-        msg = (
+        raise TypeError(
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
-        raise TypeError(msg)
 
     def invoke(
-        self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -229,7 +219,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -258,7 +248,7 @@ class BaseOutputParser(
         """
 
     async def aparse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self, result: List[Generation], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -311,15 +301,16 @@ class BaseOutputParser(
     @property
     def _type(self) -> str:
         """Return the output parser type for serialization."""
-        msg = (
+        raise NotImplementedError(
             f"_type property is not implemented in class {self.__class__.__name__}."
             " This is required for serialization."
         )
-        raise NotImplementedError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().dict(**kwargs)
-        with contextlib.suppress(NotImplementedError):
+        try:
             output_parser_dict["_type"] = self._type
+        except NotImplementedError:
+            pass
         return output_parser_dict

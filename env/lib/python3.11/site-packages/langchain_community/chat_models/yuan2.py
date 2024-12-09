@@ -40,12 +40,12 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -76,7 +76,7 @@ class ChatYuan2(BaseChatModel):
             chat = ChatYuan2()
     """
 
-    client: Any = None  #: :meta private:
+    client: Any  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
 
     model_name: str = Field(default="yuan2", alias="model")
@@ -122,9 +122,8 @@ class ChatYuan2(BaseChatModel):
     repeat_penalty: Optional[float] = 1.18
     """The penalty to apply to repeated tokens."""
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+    class Config:
+        allow_population_by_field_name = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -142,9 +141,8 @@ class ChatYuan2(BaseChatModel):
 
         return attributes
 
-    @model_validator(mode="before")
-    @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

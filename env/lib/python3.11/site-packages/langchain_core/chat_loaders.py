@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from typing import Iterator, List
 
 from langchain_core.chat_sessions import ChatSession
 
@@ -15,7 +15,7 @@ class BaseChatLoader(ABC):
             An iterator of chat sessions.
         """
 
-    def load(self) -> list[ChatSession]:
+    def load(self) -> List[ChatSession]:
         """Eagerly load the chat sessions into memory.
 
         Returns:

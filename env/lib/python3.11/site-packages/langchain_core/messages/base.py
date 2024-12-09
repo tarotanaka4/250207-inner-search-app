@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
-
-from pydantic import ConfigDict, Field, field_validator
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -20,12 +18,12 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: Union[str, list[Union[str, dict]]]
+    content: Union[str, List[Union[str, Dict]]]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
-
+    
     For example, for a message from an AI, this could include tool calls as
     encoded by the model provider.
     """
@@ -35,16 +33,16 @@ class BaseMessage(Serializable):
 
     type: str
     """The type of the message. Must be a string that is unique to the message type.
-
+    
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
     """
 
     name: Optional[str] = None
-    """An optional name for the message.
-
+    """An optional name for the message. 
+    
     This can be used to provide a human-readable name for the message.
-
+    
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
     """
@@ -53,19 +51,11 @@ class BaseMessage(Serializable):
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
 
-    model_config = ConfigDict(
-        extra="allow",
-    )
-
-    @field_validator("id", mode="before")
-    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
-        if id_value is not None:
-            return str(id_value)
-        else:
-            return id_value
+    class Config:
+        extra = Extra.allow
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
@@ -86,7 +76,7 @@ class BaseMessage(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> list[str]:
+    def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
@@ -120,9 +110,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: Union[str, list[Union[str, dict]]],
-    *contents: Union[str, list[Union[str, dict]]],
-) -> Union[str, list[Union[str, dict]]]:
+    first_content: Union[str, List[Union[str, Dict]]],
+    *contents: Union[str, List[Union[str, Dict]]],
+) -> Union[str, List[Union[str, Dict]]]:
     """Merge two message contents.
 
     Args:
@@ -144,7 +134,7 @@ def merge_content(
                 merged = [merged] + content  # type: ignore
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast(list, merged), content)  # type: ignore
+            merged = merge_lists(cast(List, merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
         else:
             # If the last element of the first content is a string
@@ -164,7 +154,7 @@ class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
 
     @classmethod
-    def get_lc_namespace(cls) -> list[str]:
+    def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object.
         Default is ["langchain", "schema", "messages"].
         """
@@ -223,12 +213,11 @@ class BaseMessageChunk(BaseMessage):
                 response_metadata=response_metadata,
             )
         else:
-            msg = (
+            raise TypeError(
                 'unsupported operand type(s) for +: "'
                 f"{self.__class__.__name__}"
                 f'" and "{other.__class__.__name__}"'
             )
-            raise TypeError(msg)
 
 
 def message_to_dict(message: BaseMessage) -> dict:
@@ -241,10 +230,10 @@ def message_to_dict(message: BaseMessage) -> dict:
         Message as a dict. The dict will have a "type" key with the message type
         and a "data" key with the message data as a dict.
     """
-    return {"type": message.type, "data": message.model_dump()}
+    return {"type": message.type, "data": message.dict()}
 
 
-def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
+def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:

@@ -1,7 +1,6 @@
 import asyncio
 import time
-from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any, Optional
+from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -15,18 +14,18 @@ from langchain_core.runnables import RunnableConfig
 class FakeListLLM(LLM):
     """Fake LLM for testing purposes."""
 
-    responses: list[str]
+    responses: List[str]
     """List of responses to return in order."""
     # This parameter should be removed from FakeListLLM since
     # it's only used by sub-classes.
     sleep: Optional[float] = None
     """Sleep time in seconds between responses.
-
+    
     Ignored by FakeListLLM, but used by sub-classes.
     """
     i: int = 0
     """Internally incremented after every model invocation.
-
+    
     Useful primarily for testing purposes.
     """
 
@@ -38,7 +37,7 @@ class FakeListLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -53,7 +52,7 @@ class FakeListLLM(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -91,7 +90,7 @@ class FakeStreamingListLLM(FakeListLLM):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[list[str]] = None,
+        stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
         result = self.invoke(input, config)
@@ -111,7 +110,7 @@ class FakeStreamingListLLM(FakeListLLM):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[list[str]] = None,
+        stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         result = await self.ainvoke(input, config)
