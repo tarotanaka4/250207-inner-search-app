@@ -53,7 +53,7 @@ kubernetes==31.0.0
 langchain==0.3.10
 langchain-community==0.3.10
 langchain-core==0.3.22
-langchain-openai==0.2.11
+langchain-openai>=0.0.2.post1
 langchain-text-splitters==0.3.2
 langsmith==0.1.147
 markdown-it-py==3.0.0
@@ -91,9 +91,9 @@ protobuf==5.29.1
 pyarrow==18.1.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
-pydantic==2.10.3
-pydantic-settings==2.6.1
-pydantic_core==2.27.1
+pydantic>=2.7.4,<3.0.0
+pydantic-settings>=2.6.1
+pydantic-core>=2.14.5
 pydeck==0.9.1
 Pygments==2.18.0
 PyMuPDF==1.25.0
