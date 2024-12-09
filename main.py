@@ -111,7 +111,7 @@ if chat_message:
         if st.session_state.mode == "社内文書検索":
             print(result)
             main_choice = result["source_documents"][0].metadata["source"]
-            main_message = "入力内容のテーマに関する情報は、以下のファイルに存在する可能性が高いです。"
+            main_message = "入力内容に関する情報は、以下のファイルに含まれている可能性があります。"
             st.markdown(main_message)
 
             content = {}
@@ -145,7 +145,7 @@ if chat_message:
             
             # sub_choices = ["data/healthX_instructions.pdf", "data/20241207_MTG議事録_healthXのマーケティング施策について.docx"]
             if sub_choices:
-                sub_message = "その他、候補を提示します。"
+                sub_message = "その他、ファイルありかの候補を提示します。"
                 st.markdown(sub_message)
                 for sub_choice in sub_choices:
                     try:
