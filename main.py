@@ -38,31 +38,32 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
     embeddings = OpenAIEmbeddings()
-    if os.path.isdir(".db"):
-        db = Chroma(collection_name='v_db', persist_directory=".db", embedding_function=embeddings)
-    else:
-        folder_name = "data"
-        files = os.listdir(folder_name)
+    # if os.path.isdir(".db"):
+    #     db = Chroma(persist_directory=".db", embedding_function=embeddings, collection_name="v_db")
+    # else:
+    folder_name = "data"
+    files = os.listdir(folder_name)
 
-        docs = []
-        for file in files:
-            if file.endswith(".pdf"):
-                loader = PyMuPDFLoader(f"{folder_name}/{file}")
-            elif file.endswith(".docx"):
-                loader = Docx2txtLoader(f"{folder_name}/{file}")
-            else:
-                continue
-            pages = loader.load()
-            docs.extend(pages)
+    docs = []
+    for file in files:
+        if file.endswith(".pdf"):
+            loader = PyMuPDFLoader(f"{folder_name}/{file}")
+        elif file.endswith(".docx"):
+            loader = Docx2txtLoader(f"{folder_name}/{file}")
+        else:
+            continue
+        pages = loader.load()
+        docs.extend(pages)
 
-        text_splitter = CharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=30,
-            separator="\n",
-        )
-        splitted_pages = text_splitter.split_documents(docs)
+    text_splitter = CharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=30,
+        separator="\n",
+    )
+    splitted_pages = text_splitter.split_documents(docs)
 
-        db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db")
+    db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db")
+    
     retriever = db.as_retriever(search_kwargs={"k": 5})
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
     st.session_state.chain = RetrievalQA.from_chain_type(
