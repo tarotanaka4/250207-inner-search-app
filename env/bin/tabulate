@@ -1,8 +1,0 @@
-#!/Users/yonekatsuya/Desktop/株式会社トリガーネット/開発/生成AIエンジニアコース/product_recommend/env/bin/python
-# -*- coding: utf-8 -*-
-import re
-import sys
-from tabulate import _main
-if __name__ == '__main__':
-    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
-    sys.exit(_main())
