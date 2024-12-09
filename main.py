@@ -11,6 +11,10 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
+st.set_page_config(
+     page_title="社内情報特化型生成AI検索アプリ"
+ )
+
 st.markdown('## 社内情報特化型生成AI検索アプリ')
 
 col1, col2 = st.columns([1, 3])
