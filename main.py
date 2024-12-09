@@ -62,14 +62,6 @@ if "messages" not in st.session_state:
         )
         splitted_pages = text_splitter.split_documents(docs)
 
-        # client_settings = Settings(
-        #     chroma_db_impl="duckdb+parquet",
-        #     persist_directory=".db",
-        #     anonymized_telemetry=False
-        # )
-        # client = chromadb.Client(client_settings)
-
-        # db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db", client=client)
         db = Chroma.from_documents(splitted_pages, embedding=embeddings, persist_directory=".db")
     retriever = db.as_retriever(search_kwargs={"k": 5})
     llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
@@ -116,6 +108,7 @@ if chat_message:
     result = st.session_state.chain.invoke(chat_message)
     with st.chat_message("assistant"):
         if st.session_state.mode == "社内文書検索":
+            print(result)
             main_choice = result["source_documents"][0].metadata["source"]
             main_message = "入力内容のテーマに関する情報は、以下のファイルに存在する可能性が高いです。"
             st.markdown(main_message)
