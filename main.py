@@ -39,7 +39,7 @@ if "messages" not in st.session_state:
 
     embeddings = OpenAIEmbeddings()
     if os.path.isdir(".db"):
-        db = Chroma(persist_directory=".db", embedding_function=embeddings)
+        db = Chroma(collection_name='v_db', persist_directory=".db", embedding_function=embeddings)
     else:
         folder_name = "data"
         files = os.listdir(folder_name)
