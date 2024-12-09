@@ -95,7 +95,7 @@ for message in st.session_state.messages:
                 st.markdown(message["content"]["answer"])
                 if message["content"]["message"]:
                     st.divider()
-                    st.markdown(message["content"]["message"])
+                    st.markdown(f"**{message['content']['message']}**")
                     for file_path in message["content"]["file_path_list"]:
                         st.info(file_path, icon=":material/description:")
 
@@ -105,7 +105,7 @@ if chat_message:
     st.session_state.messages.append({"role": "user", "content": chat_message})
     with st.chat_message("user"):
         st.markdown(chat_message)
-        
+
     result = st.session_state.chain.invoke(chat_message)
     with st.chat_message("assistant"):
         if st.session_state.mode == "社内文書検索":
