@@ -1,0 +1,246 @@
+"""
+このファイルは、最初の画面読み込み時にのみ実行される初期化処理が記述されたファイルです。
+"""
+
+############################################################
+# ライブラリの読み込み
+############################################################
+# ファイルの最上部で、このファイルで使用するライブラリ一覧の読み込み
+import os
+import logging
+from logging.handlers import TimedRotatingFileHandler
+from uuid import uuid4
+from dotenv import load_dotenv
+import streamlit as st
+from docx import Document
+from langchain_community.document_loaders import WebBaseLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+import constants as ct
+
+
+############################################################
+# 設定関連
+############################################################
+# 「.env」ファイルで定義した環境変数の読み込み
+load_dotenv()
+
+
+############################################################
+# 関数定義
+############################################################
+
+def initialize():
+    """
+    画面読み込み時に実行する初期化処理
+    """
+    # ブラウザタブの表示文言を設定
+    st.set_page_config(
+        page_title=ct.APP_NAME
+    )
+
+    # 初期化データの用意
+    initialize_session_state()
+    # ログ出力用にセッションIDを生成
+    initialize_session_id()
+    # ログ出力の設定
+    initialize_logger()
+    # RAGのRetrieverを作成
+    initialize_retriever()
+
+
+def initialize_logger():
+    """
+    ログ出力の設定
+    """
+    # 引数に指定した名前のロガー（ログを記録するオブジェクト）を取得
+    # 再度別の箇所で呼び出した場合、すでに同じ名前のロガーが存在していれば読み込む
+    logger = logging.getLogger(ct.LOGGER_NAME)
+
+    # すでにロガーにハンドラー（ログの出力先を制御するもの）が設定されている場合、同じログ出力が複数回行われないよう処理を中断する
+    if logger.hasHandlers():
+        return
+
+    # 1日単位でログファイルの中身をリセットし、切り替える設定
+    log_handler = TimedRotatingFileHandler(
+        os.path.join(ct.LOG_DIR_PATH, ct.LOG_FILE),
+        when="D"
+    )
+    # 出力するログメッセージのフォーマット定義
+    # - 「levelname」: ログの重要度（INFO, WARNING, ERRORなど）
+    # - 「asctime」: ログのタイムスタンプ（いつ記録されたか）
+    # - 「lineno」: ログが出力されたファイルの行番号
+    # - 「funcName」: ログが出力された関数名
+    # - 「session_id」: セッションID（誰のアプリ操作か分かるように）
+    # - 「message」: ログメッセージ
+    formatter = logging.Formatter(
+        f"[%(levelname)s] %(asctime)s line %(lineno)s, in %(funcName)s, session_id={st.session_state.session_id}: %(message)s"
+    )
+
+    # 定義したフォーマッターの適用
+    log_handler.setFormatter(formatter)
+
+    # ログレベルを「INFO」に設定
+    logger.setLevel(logging.INFO)
+
+    # 作成したハンドラー（ログ出力先を制御するオブジェクト）を、
+    # ロガー（ログメッセージを実際に生成するオブジェクト）に追加してログ出力の最終設定
+    logger.addHandler(log_handler)
+
+
+def initialize_session_id():
+    """
+    セッションIDの作成
+    """
+    if "session_id" not in st.session_state:
+        # ランダムな文字列（セッションID）を、ログ出力用に作成
+        st.session_state.session_id = uuid4().hex
+
+
+def initialize_retriever():
+    """
+    画面読み込み時にRAGのRetriever（ベクターストアから検索するオブジェクト）を作成
+    """
+    # ロガーを読み込むことで、後続の処理中に発生したエラーなどがログファイルに記録される
+    logger = logging.getLogger(ct.LOGGER_NAME)
+
+    # すでにRetrieverが作成済みの場合、後続の処理を中断
+    if "retriever" in st.session_state:
+        return
+    
+    # RAGの参照先となるデータソースの読み込み
+    docs_all, integrated_docs_all = load_data_sources()
+    
+    # 埋め込みモデルの用意
+    embeddings = OpenAIEmbeddings()
+    
+    # チャンク分割用のオブジェクトを作成
+    text_splitter = CharacterTextSplitter(
+        chunk_size=ct.CHUNK_SIZE,
+        chunk_overlap=ct.CHUNK_OVERLAP,
+        separator="\n"
+    )
+
+    # チャンク分割を実施
+    splitted_docs = text_splitter.split_documents(docs_all)
+
+    # チャンク分割後のデータソースに、CSVファイルの各行データを1つのドキュメントに統合したデータを追加
+    splitted_docs.extend(integrated_docs_all)
+
+    # ベクターストアの作成
+    db = Chroma.from_documents(splitted_docs, embedding=embeddings)
+
+    # ベクターストアを検索するRetrieverの作成
+    st.session_state.retriever = db.as_retriever(search_kwargs={"k": ct.TOP_K})
+
+
+def initialize_session_state():
+    """
+    初期化データの用意
+    """
+    if "messages" not in st.session_state:
+        # 「表示用」の会話ログを順次格納するリストを用意
+        st.session_state.messages = []
+        # 「LLMとのやりとり用」の会話ログを順次格納するリストを用意
+        st.session_state.chat_history = []
+
+
+def load_data_sources():
+    """
+    RAGの参照先となるデータソースの読み込み
+
+    Returns:
+        docs_all: 読み込んだ通常データソース
+        integrated_docs_all: CSVファイル整形後のデータソース
+    """
+    # データソースを格納する用のリスト
+    docs_all = []
+    # CSVファイル整形後のデータソースを格納する用のリスト
+    integrated_docs_all = []
+    # ファイル読み込みの実行（渡した各リストにデータが格納される）
+    recursive_file_check(ct.RAG_TOP_FOLDER_PATH, docs_all, integrated_docs_all)
+
+    web_docs_all = []
+    # ファイルとは別に、指定のWebページ内のデータも読み込み
+    # 読み込み対象のWebページ一覧に対して処理
+    for web_url in ct.WEB_URL_LOAD_TARGETS:
+        # 指定のWebページを読み込み
+        loader = WebBaseLoader(web_url)
+        web_docs = loader.load()
+        # for文の外のリストに読み込んだデータソースを追加
+        web_docs_all.extend(web_docs)
+    # 通常読み込みのデータソースにWebページのデータを追加
+    docs_all.extend(web_docs_all)
+
+    return docs_all, integrated_docs_all
+
+
+def recursive_file_check(path, docs_all, integrated_docs_all):
+    """
+    RAGの参照先となるデータソースの読み込み
+
+    Args:
+        path: 読み込み対象のファイル/フォルダのパス
+        docs_all: データソースを格納する用のリスト
+        integrated_docs_all: CSVファイル整形後のデータソースを格納する用のリスト
+    """
+    # パスがフォルダかどうかを確認
+    if os.path.isdir(path):
+        # フォルダの場合、フォルダ内のファイル/フォルダ名の一覧を取得
+        files = os.listdir(path)
+        # 各ファイル/フォルダに対して処理
+        for file in files:
+            # ファイル/フォルダ名だけでなく、フルパスを取得
+            full_path = os.path.join(path, file)
+            # フルパスを渡し、再帰的にファイル読み込みの関数を実行
+            recursive_file_check(full_path, docs_all, integrated_docs_all)
+    else:
+        # パスがファイルの場合、ファイル読み込み
+        file_load(path, docs_all, integrated_docs_all)
+
+
+def file_load(path, docs_all, integrated_docs_all):
+    """
+    ファイル内のデータ読み込み
+
+    Args:
+        path: ファイルパス
+        docs_all: データソースを格納する用のリスト
+        integrated_docs_all: CSVファイル整形後のデータソースを格納する用のリスト
+    """
+    # ファイルの拡張子を取得
+    file_extension = os.path.splitext(path)[1]
+    # ファイル名（拡張子を含む）を取得
+    file_name = os.path.basename(path)
+
+    # 想定していたファイル形式の場合のみ読み込む
+    if file_extension in ct.SUPPORTED_EXTENSIONS:
+        # ファイルに拡張子に合ったdata loaderを使ってデータ読み込み
+        loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
+        docs = loader.load()
+        # 整形対象のCSVファイルでない場合、通常のデータソースの入れ物「docs_all」にファイルデータを追加
+        if not file_name in ct.CSV_INTEGRATION_TARGETS:
+            docs_all.extend(docs)
+        # 整形対象のCSVファイルの場合の処理
+        else:
+            # ドキュメントに書き込み用のテキストの入れ物を用意
+            doc = ""
+            # リスト「docs」の各要素にはCSVファイルの各行データが入っているため、行データごとに処理
+            for row in docs:
+                # 行データの中身のテキストを取得
+                page_content = row.page_content
+                # 列ごとに改行が入っているため、改行区切りでリスト化
+                value_list = page_content.split("\n")
+                # リストの各要素を改行で連結したテキストを取得
+                row_data = "\n".join(value_list)
+                # 各行データをまとめる入れ物「doc」に、行データを区切り線込みで順次追加
+                doc += row_data + "\n=================================\n"
+            # ドキュメントのオブジェクトを用意
+            new_doc = Document()
+            # ドキュメントのコンテンツとしてCSVファイルの全データを設定
+            new_doc.page_content = doc
+            # 参照元ファイルのパスを設定
+            new_doc.metadata = {"source": path}
+            # CSVファイル整形後のデータソースを格納する用のリストに追加
+            integrated_docs_all.append(new_doc)
