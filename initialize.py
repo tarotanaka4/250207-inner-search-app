@@ -48,6 +48,9 @@ def initialize_logger():
     """
     ログ出力の設定
     """
+    # 指定のログフォルダが存在すれば読み込み、存在しなければ新規作成
+    os.makedirs(ct.LOG_DIR_PATH, exist_ok=True)
+    
     # 引数に指定した名前のロガー（ログを記録するオブジェクト）を取得
     # 再度別の箇所で呼び出した場合、すでに同じ名前のロガーが存在していれば読み込む
     logger = logging.getLogger(ct.LOGGER_NAME)
