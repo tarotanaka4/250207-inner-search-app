@@ -5,7 +5,6 @@
 ############################################################
 # ライブラリの読み込み
 ############################################################
-# ファイルの最上部で、このファイルで使用するライブラリ一覧の読み込み
 import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -35,11 +34,6 @@ def initialize():
     """
     画面読み込み時に実行する初期化処理
     """
-    # ブラウザタブの表示文言を設定
-    st.set_page_config(
-        page_title=ct.APP_NAME
-    )
-
     # 初期化データの用意
     initialize_session_state()
     # ログ出力用にセッションIDを生成
@@ -216,7 +210,7 @@ def file_load(path, docs_all, integrated_docs_all):
 
     # 想定していたファイル形式の場合のみ読み込む
     if file_extension in ct.SUPPORTED_EXTENSIONS:
-        # ファイルに拡張子に合ったdata loaderを使ってデータ読み込み
+        # ファイルの拡張子に合ったdata loaderを使ってデータ読み込み
         loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
         docs = loader.load()
         # 整形対象のCSVファイルでない場合、通常のデータソースの入れ物「docs_all」にファイルデータを追加

@@ -5,7 +5,6 @@
 ############################################################
 # ライブラリの読み込み
 ############################################################
-# ファイルの最上部で、このファイルで使用するライブラリ一覧を読み込み
 import os
 from dotenv import load_dotenv
 import streamlit as st
@@ -36,7 +35,7 @@ def get_source_icon(source):
         source: 参照元のありか
 
     Returns:
-        icon: メッセージと一緒に表示するアイコンの種類
+        メッセージと一緒に表示するアイコンの種類
     """
     # 参照元がWebページの場合とファイルの場合で、取得するアイコンの種類を変える
     if source.startswith("http"):
@@ -57,7 +56,7 @@ def build_error_message(message):
     Returns:
         エラーメッセージと管理者問い合わせテンプレートの連結テキスト
     """
-    return "\n".join([message, ct.ERROR_MESSAGE_TEMPLATE])
+    return "\n".join([message, ct.COMMON_ERROR_MESSAGE])
 
 
 def get_llm_response(chat_message):
@@ -68,7 +67,7 @@ def get_llm_response(chat_message):
         chat_message: ユーザー入力値
 
     Returns:
-        llm_response: LLMからの回答
+        LLMからの回答
     """
     # LLMのオブジェクトを用意
     llm = ChatOpenAI(model_name=ct.MODEL, temperature=ct.TEMPERATURE)

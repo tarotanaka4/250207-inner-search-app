@@ -5,7 +5,6 @@
 ############################################################
 # ライブラリの読み込み
 ############################################################
-# ファイルの最上部で、このファイルで使用するライブラリ一覧を読み込み
 from langchain_community.document_loaders import PyMuPDFLoader, Docx2txtLoader, TextLoader
 from langchain_community.document_loaders.csv_loader import CSVLoader
 
@@ -24,14 +23,17 @@ CHAT_INPUT_HELPER_TEXT = "こちらからメッセージを送信してくださ
 DOC_SOURCE_ICON = ":material/description: "
 LINK_SOURCE_ICON = ":material/link: "
 WARNING_ICON = ":material/warning:"
+ERROR_ICON = ":material/error:"
+SPINNER_TEXT = "回答生成中..."
 
 
 # ==========================================
-# ログ設定系
+# ログ出力系
 # ==========================================
 LOG_DIR_PATH = "./logs"
 LOGGER_NAME = "ApplicationLog"
 LOG_FILE = "application.log"
+APP_BOOT_MESSAGE = "アプリが起動されました。"
 
 
 # ==========================================
@@ -51,8 +53,8 @@ RAG_TOP_FOLDER_PATH = "./data"
 SUPPORTED_EXTENSIONS = {
     ".pdf": PyMuPDFLoader,
     ".docx": Docx2txtLoader,
-    ".txt": TextLoader,
-    ".csv": CSVLoader
+    ".csv": CSVLoader,
+    ".txt": TextLoader
 }
 CSV_INTEGRATION_TARGETS = [
     "社員名簿.csv"
@@ -106,12 +108,12 @@ NO_DOC_MATCH_ANSWER = "該当資料なし"
 # ==========================================
 # エラー・警告メッセージ
 # ==========================================
+COMMON_ERROR_MESSAGE = "このエラーが繰り返し発生する場合は、管理者にお問い合わせください。"
+INITIALIZE_ERROR_MESSAGE = "初期化処理に失敗しました。"
 NO_DOC_MATCH_MESSAGE = """
     入力内容と関連する社内文書が見つかりませんでした。\n
     入力内容を変更してください。
 """
-ERROR_MESSAGE_TEMPLATE = "このエラーが繰り返し発生する場合は、管理者にお問い合わせください。"
-DATA_LOAD_ERROR_MESSAGE = "参照する社内文書のデータ読み込みに失敗しました。"
-DISP_LOG_ERROR_MESSAGE = "会話ログの表示に失敗しました。"
-GET_LLM_RESPONSE_ERROR_MESSAGE = "LLMによる回答生成に失敗しました。"
-DISP_ANSWER_ERROR_MESSAGE = "LLMからの回答表示に失敗しました。"
+CONVERSATION_LOG_ERROR_MESSAGE = "過去の会話履歴の表示に失敗しました。"
+GET_LLM_RESPONSE_ERROR_MESSAGE = "回答生成に失敗しました。"
+DISP_ANSWER_ERROR_MESSAGE = "回答表示に失敗しました。"

@@ -5,7 +5,6 @@
 ############################################################
 # ライブラリの読み込み
 ############################################################
-# ファイルの最上部で、このファイルで使用するライブラリ一覧の読み込み
 import streamlit as st
 import utils
 import constants as ct
@@ -36,7 +35,7 @@ def display_sidebar():
         with col1:
             # 「label_visibility="collapsed"」とすることで、ラジオボタンを非表示にする
             st.session_state.mode = st.radio(
-                label="利用目的",
+                label="",
                 options=[ct.ANSWER_MODE_1, ct.ANSWER_MODE_2],
                 label_visibility="collapsed"
             )
@@ -148,7 +147,7 @@ def display_search_llm_response(llm_response):
         llm_response: LLMからの回答
 
     Returns:
-        content: LLMからの回答を画面表示用に整形した辞書データ
+        LLMからの回答を画面表示用に整形した辞書データ
     """
     # LLMからのレスポンスに参照元情報が入っており、かつ「該当資料なし」が回答として返された場合
     if llm_response["context"] and llm_response["answer"] != ct.NO_DOC_MATCH_ANSWER:
@@ -275,7 +274,7 @@ def display_contact_llm_response(llm_response):
         llm_response: LLMからの回答
 
     Returns:
-        content: LLMからの回答を画面表示用に整形した辞書データ
+        LLMからの回答を画面表示用に整形した辞書データ
     """
     # LLMからの回答を表示
     st.markdown(llm_response["answer"])
